@@ -10,6 +10,7 @@ app.use(bodyParser.json());
 
 
 app.use("/api", require("./src/routes/auth.route"));
+app.use("/api", require("./src/routes/room.route"));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

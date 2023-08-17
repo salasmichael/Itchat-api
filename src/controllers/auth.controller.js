@@ -39,37 +39,38 @@ exports.createUser = async (req, res) => {
   const foundUser = await User.findOne({
     where: { email: email },
   });
-  if (foundUser) {
-    res
-      .status(401)
-      .send(errorResponseFormat(`The user with the email : ${email} was already found.`));
-  } else {
-    User.create({
-        name: name,
-        email: email,
-        password: hashedPassword,
-    })
-      .then(async() => {
 
-        const foundUser = await User.findOne({
-            where: { email: email },
-          });
+    if (foundUser) {
+        res
+        .status(401)
+        .send(errorResponseFormat(`The user with the email : ${email} was already found.`));
+    } else {
+        User.create({
+            name: name,
+            email: email,
+            password: hashedPassword,
+        })
+        .then(async() => {
 
-        res
-          .status(200)
-          .send(successResponseFormat(foundUser));
-      })
-      .catch((error) => {
-        console.log(error);
-        res
-          .status(500)
-          .send(
-            errorResponseFormat(
-              "Error trying to save, please try again later."
-            )
-          );
-      });
-  }
+            const foundUser = await User.findOne({
+                where: { email: email },
+            });
+
+            res
+            .status(200)
+            .send(successResponseFormat(foundUser));
+        })
+        .catch((error) => {
+            console.log(error);
+            res
+            .status(500)
+            .send(
+                errorResponseFormat(
+                "Error trying to save, please try again later."
+                )
+            );
+        });
+    }
 };
 
 
