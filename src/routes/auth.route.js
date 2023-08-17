@@ -3,6 +3,6 @@ const authController = require("../controllers/auth.controller");
 const app = express();
 
 app.post("/login",authController.login);
-app.post("/create",authController.createUser);
+app.post("/register",authController.createUser);
 
 module.exports = app;
