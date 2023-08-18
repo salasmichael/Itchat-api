@@ -1,9 +1,8 @@
 const { Server } = require("socket.io");
 const Message = require("../models/messages.model");
+const User = require("../models/user.model");
 
 module.exports = (server) => {
-  console.log('Inicio socket');
-
   const io = new Server(server, {
     cors: {
       origin: "*",
@@ -12,64 +11,66 @@ module.exports = (server) => {
   });
 
   io.on('connection', async(socket) => {
-    socket.on('set-nickname', (nickname) => {
-      socket.nickname = nickname;
-  
-    });
-  
-  //  
-  
-  const roomId = 1; // Obtén el roomId como desees
-  
+
+    socket.on('set-roomId', async(room_id) => {
       try {
-      // Consultar los mensajes de la base de datos para la sala
-      const query = `SELECT * FROM messages m INNER JOIN users u ON m.user_id = u.id WHERE room_id = ?`;
-      const results = await Message.findAll({
-        room_id: roomId
-      })
-      console.log(results);
-      // connection.query(query, [roomId], async (error, results) => {
-      //     if (error) throw error;
-  
-      //     // Enviar los mensajes almacenados al cliente
-          for (const message of results) {
+
+        const results = await Message.findAll({
+          where: {
+            room_id: room_id
+          },
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['name'],
+            },
+          ],
+        });
+
+         for (const message of results) {
             const messageData = {
                 text: message.message,
-                from: message.name,
+                from: message.user.name,
                 created: message.timestamp,
             };
           socket.emit('message', messageData);
           }
-      // });
 
       } catch (error) {
       console.log(error);
       }
-  
-  
-  // 
-    socket.on('add-message', (message) => {
-  
+        
+    });
+    
+    socket.on('add-message', async (message) => {
       const timestamp = new Date();
       const roomId = message.room_id; 
       const userId = message.user_id;
-      const text   = message.text;
-       
-      // try{
-      //   // Insert message into the database
-      //   const query = `INSERT INTO messages (room_id, user_id, message, timestamp) VALUES (?, ?, ?, ?)`;
-      //   connection.query(query, [roomId, userId, text, timestamp], (error, results) => {
-      //     if (error) throw error;
-      //     io.emit('message', {text: message.text, from: socket.nickname, created: timestamp});
-      //   });
-      // } catch (error) {
-      //     console.log(error)
-      //   res.status(500).json({ error: 'An error occurred' });
-      // }
-  
+      const text = message.text;
+    
+      try {
+
+        const createdMessage = await Message.create({
+          room_id: roomId,
+          user_id: userId,
+          message: text,
+          timestamp: timestamp,
+        });
+    
+        const user = await User.findByPk(userId);
+    
+        io.emit('message', {
+          text: createdMessage.message,
+          from: user.name,
+          created: createdMessage.timestamp,
+        });
+      } catch (error) {
+        console.log(error);
+      }
     });
+
   
   });
-
 
 };
